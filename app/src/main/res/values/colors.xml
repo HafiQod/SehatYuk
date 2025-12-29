@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warna yang sudah ada -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Warna Baru untuk Desain Login -->
+    <color name="medi_purple_primary">#7B61FF</color>
+    <color name="medi_purple_light">#EAE6FF</color>
+    <color name="medi_card_background">#A6FFFFFF</color> <!-- Putih transparan 65% -->
+    <color name="medi_text_primary">#394263</color>
+    <color name="medi_text_secondary">#7A869A</color>
+</resources>

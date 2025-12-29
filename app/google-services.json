@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "897108404180",
+    "firebase_url": "https://mediplusapp-e6128-default-rtdb.firebaseio.com",
+    "project_id": "mediplusapp-e6128",
+    "storage_bucket": "mediplusapp-e6128.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897108404180:android:df32d78904bbc444e81841",
+        "android_client_info": {
+          "package_name": "com.example.mediplus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcz7udec0G8e6-xP-6p70pLVuIlQB15IA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
