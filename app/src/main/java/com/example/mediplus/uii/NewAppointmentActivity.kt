@@ -18,6 +18,7 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -26,13 +27,15 @@ import com.example.mediplus.R
 import com.example.mediplus.uii.database.AppointmentModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
 class NewAppointmentActivity : AppCompatActivity() {
 
-    // Variabel UI
     private lateinit var edtFullName: EditText
     private lateinit var autoGender: AutoCompleteTextView
     private lateinit var edtPhone: EditText
@@ -62,22 +65,24 @@ class NewAppointmentActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             saveAppointment()
         }
+
+        // Setup Icon Notifikasi (Pastikan ID ada di XML)
+        val ivNotification = findViewById<ImageView>(R.id.ivNotification) // Sesuaikan ID
+        ivNotification?.setOnClickListener {
+            startActivity(Intent(this, NotificationActivity::class.java))
+        }
     }
 
-    // Cek Permission Notifikasi & Alarm
     private fun checkPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    101
+                    this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101
                 )
             }
         }
-        // Cek Izin Exact Alarm (Android 12+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
             if (!alarmManager.canScheduleExactAlarms()) {
@@ -157,26 +162,19 @@ class NewAppointmentActivity : AppCompatActivity() {
         timePickerDialog.show()
     }
 
-    // --- FUNGSI JADWALKAN NOTIFIKASI REAL (PERBAIKAN) ---
     @SuppressLint("ScheduleExactAlarm")
     private fun scheduleNotification(date: String, time: String) {
         try {
-            // 1. Parse Waktu Appointment
-            val dateTimeString = "$date $time" // Contoh: "24/12/2025 14:00"
+            val dateTimeString = "$date $time"
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             val dateObj = sdf.parse(dateTimeString)
 
             val calendar = Calendar.getInstance()
             if (dateObj != null) {
                 calendar.time = dateObj
-
-                // 2. Mundurkan 30 Menit untuk Reminder
-                calendar.add(Calendar.MINUTE, -30)
+                calendar.add(Calendar.MINUTE, -30) // Reminder 30 menit sebelum
                 val triggerTime = calendar.timeInMillis
-
-                // Debug: Cek selisih waktu
                 val now = System.currentTimeMillis()
-                val diffSeconds = (triggerTime - now) / 1000
 
                 if (triggerTime > now) {
                     val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -184,35 +182,23 @@ class NewAppointmentActivity : AppCompatActivity() {
                         putExtra("title", "Appointment Reminder")
                         putExtra("message", "Halo! 30 menit lagi jadwal konsultasimu dimulai.")
                     }
-
                     val uniqueId = (System.currentTimeMillis() / 1000).toInt()
                     val pendingIntent = PendingIntent.getBroadcast(
                         this, uniqueId, intent, PendingIntent.FLAG_IMMUTABLE
                     )
-
-                    // 3. Gunakan setExactAndAllowWhileIdle (LEBIH KUAT DARI DOZE MODE)
                     try {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                         } else {
                             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                         }
-
-                        // INFO PENTING BUAT KAMU:
-                        Toast.makeText(this, "Pengingat aktif! Akan bunyi dalam ${diffSeconds / 60} menit", Toast.LENGTH_LONG).show()
-                        Log.d("NotifDebug", "Alarm set for: ${sdf.format(calendar.time)}")
-
                     } catch (e: SecurityException) {
                         Toast.makeText(this, "Gagal: Izin Alarm belum diberikan", Toast.LENGTH_SHORT).show()
                     }
-                } else {
-                    // Beri tahu user kalau waktunya kependekan
-                    Toast.makeText(this, "Waktu < 30 menit, pengingat tidak dipasang.", Toast.LENGTH_LONG).show()
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Error Waktu: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -234,7 +220,6 @@ class NewAppointmentActivity : AppCompatActivity() {
             val otherText = edtOtherPurpose.text.toString().trim()
             if (otherText.isNotEmpty()) purposes.append("Others: $otherText")
         }
-
         var finalPurpose = purposes.toString()
         if (finalPurpose.endsWith(", ")) finalPurpose = finalPurpose.substring(0, finalPurpose.length - 2)
         if (finalPurpose.isEmpty()) finalPurpose = "General Check-up"
@@ -250,45 +235,72 @@ class NewAppointmentActivity : AppCompatActivity() {
             return
         }
 
+        // --- VALIDASI UNIK JAM (LOGIKA BARU) ---
         btnSave.isEnabled = false
-        btnSave.text = "Saving..."
+        btnSave.text = "Checking Availability..."
 
         val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
         val ref = database.getReference("appointments")
-        val appointmentId = ref.push().key
 
-        if (appointmentId != null) {
-            val newAppt = AppointmentModel(
-                id = appointmentId,
-                userId = user.uid,
-                fullName = name,
-                gender = gender,
-                phoneNumber = phone,
-                time = time,
-                date = date,
-                dob = dob,
-                address = address,
-                idNumber = idNum,
-                purpose = finalPurpose,
-                status = "Pending"
-            )
+        // Query: Cari appointment di TANGGAL yang sama
+        ref.orderByChild("date").equalTo(date).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var isTaken = false
 
-            ref.child(appointmentId).setValue(newAppt)
-                .addOnSuccessListener {
+                // Cek satu-satu anak (appointment) di tanggal tersebut
+                for (child in snapshot.children) {
+                    val existingTime = child.child("time").getValue(String::class.java)
+                    // Jika jam nya sama persis
+                    if (existingTime == time) {
+                        isTaken = true
+                        break
+                    }
+                }
+
+                if (isTaken) {
+                    // Jika sudah diambil
                     btnSave.isEnabled = true
                     btnSave.text = "Make Appointment"
+                    Toast.makeText(this@NewAppointmentActivity, "Jam $time pada $date sudah terisi. Pilih jam lain.", Toast.LENGTH_LONG).show()
+                } else {
+                    // Jika kosong, Simpan
+                    val appointmentId = ref.push().key ?: return
+                    val newAppt = AppointmentModel(
+                        id = appointmentId,
+                        userId = user.uid,
+                        fullName = name,
+                        gender = gender,
+                        phoneNumber = phone,
+                        time = time,
+                        date = date,
+                        dob = dob,
+                        address = address,
+                        idNumber = idNum,
+                        purpose = finalPurpose,
+                        status = "Pending"
+                    )
 
-                    // --- PASANG PENGINGAT ---
-                    scheduleNotification(date, time)
+                    ref.child(appointmentId).setValue(newAppt)
+                        .addOnSuccessListener {
+                            btnSave.isEnabled = true
+                            btnSave.text = "Make Appointment"
+                            scheduleNotification(date, time)
+                            Toast.makeText(this@NewAppointmentActivity, "Janji Temu Berhasil!", Toast.LENGTH_SHORT).show()
+                            finish()
+                        }
+                        .addOnFailureListener { e ->
+                            btnSave.isEnabled = true
+                            btnSave.text = "Make Appointment"
+                            Toast.makeText(this@NewAppointmentActivity, "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                }
+            }
 
-                    Toast.makeText(this, "Janji Temu Berhasil!", Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-                .addOnFailureListener { e ->
-                    btnSave.isEnabled = true
-                    btnSave.text = "Make Appointment"
-                    Toast.makeText(this, "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-        }
+            override fun onCancelled(error: DatabaseError) {
+                btnSave.isEnabled = true
+                btnSave.text = "Make Appointment"
+                Toast.makeText(this@NewAppointmentActivity, "Error DB: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 }

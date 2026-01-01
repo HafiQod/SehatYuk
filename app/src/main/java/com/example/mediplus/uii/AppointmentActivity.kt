@@ -9,9 +9,10 @@ import android.view.View
 import android.view.Window
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.PopupMenu // Import PopupMenu
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -42,6 +43,11 @@ class AppointmentActivity : AppCompatActivity() {
         val ivProfile = findViewById<ImageView>(R.id.ivProfile)
         val btnGoToNewAppointment = findViewById<Button>(R.id.btnGoToNewAppointment)
 
+        // Asumsi ID ImageView notifikasi kamu adalah ivNotification atau urutan imageview pertama
+        // Sebaiknya beri ID di XML: android:id="@+id/ivNotification"
+        // Kode di bawah mencari ImageView lonceng. Sesuaikan ID jika perlu.
+        val ivNotification = findViewById<ImageView>(R.id.ivNotification) // Pastikan ID ini ada di XML
+
         // 2. Setup RecyclerView
         rvAppointments.layoutManager = LinearLayoutManager(this)
         rvAppointments.setHasFixedSize(true)
@@ -59,12 +65,18 @@ class AppointmentActivity : AppCompatActivity() {
             showProfileMenu(view)
         }
 
+        // Navigasi ke Halaman Notifikasi Baru
+        ivNotification?.setOnClickListener {
+            startActivity(Intent(this, NotificationActivity::class.java))
+        }
+
         btnGoToNewAppointment.setOnClickListener {
             startActivity(Intent(this, NewAppointmentActivity::class.java))
         }
 
         setupBottomNav()
     }
+
     private fun showProfileMenu(view: View) {
         val popup = PopupMenu(this, view)
         popup.menuInflater.inflate(R.menu.menu_profile, popup.menu)
@@ -72,16 +84,12 @@ class AppointmentActivity : AppCompatActivity() {
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_profile -> {
-                    Toast.makeText(this, "Menu Profile diklik", Toast.LENGTH_SHORT).show()
-                    true
-                }
-                R.id.action_settings -> {
-                    Toast.makeText(this, "Menu Settings diklik", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, ProfileActivity::class.java)
+                    startActivity(intent)
                     true
                 }
                 R.id.action_logout -> {
                     FirebaseAuth.getInstance().signOut()
-
                     val intent = Intent(this, LoginActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
@@ -109,6 +117,7 @@ class AppointmentActivity : AppCompatActivity() {
         val tvPurpose = dialog.findViewById<TextView>(R.id.tvDetailPurpose)
         val tvPhone = dialog.findViewById<TextView>(R.id.tvDetailPhone)
         val tvAddress = dialog.findViewById<TextView>(R.id.tvDetailAddress)
+        val btnDelete = dialog.findViewById<Button>(R.id.btnDeleteAppointment) // Tombol Hapus Baru
         val btnClose = dialog.findViewById<Button>(R.id.btnCloseDialog)
 
         tvName.text = appt.fullName
@@ -116,6 +125,26 @@ class AppointmentActivity : AppCompatActivity() {
         tvPurpose.text = appt.purpose
         tvPhone.text = appt.phoneNumber
         tvAddress.text = appt.address
+
+        // --- LOGIKA HAPUS APPOINTMENT ---
+        btnDelete.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Cancel Appointment")
+                .setMessage("Are you sure you want to cancel and delete this appointment?")
+                .setPositiveButton("Yes") { _, _ ->
+                    val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
+                    val ref = database.getReference("appointments").child(appt.id)
+
+                    ref.removeValue().addOnSuccessListener {
+                        Toast.makeText(this, "Appointment cancelled", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    }.addOnFailureListener {
+                        Toast.makeText(this, "Failed to cancel", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("No", null)
+                .show()
+        }
 
         btnClose.setOnClickListener {
             dialog.dismiss()
@@ -126,9 +155,7 @@ class AppointmentActivity : AppCompatActivity() {
 
     private fun getAppointmentData() {
         val user = FirebaseAuth.getInstance().currentUser
-        if (user == null) {
-            return
-        }
+        if (user == null) return
 
         val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
         val ref = database.getReference("appointments")

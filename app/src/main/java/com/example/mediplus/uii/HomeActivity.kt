@@ -56,10 +56,10 @@ class HomeActivity : AppCompatActivity() {
 
         ivProfile.setOnClickListener { showProfileMenu(it) }
 
-        // --- PERBAIKAN DI SINI ---
+        // --- UPDATE PENTING DI SINI ---
+        // Tombol ini sekarang membuka halaman Gamifikasi versi Jetpack Compose
         btnStartMission.setOnClickListener {
-            // Membuka GamifikasiActivity
-            val intent = Intent(this, GamifikasiActivity::class.java)
+            val intent = Intent(this, GamifikasiComposeActivity::class.java)
             startActivity(intent)
         }
     }
@@ -77,6 +77,7 @@ class HomeActivity : AppCompatActivity() {
 
     private fun loadUpcomingAppointments() {
         val userId = auth.currentUser?.uid ?: return
+        // Pastikan URL database ini sesuai dengan console Firebase kamu
         val ref = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
             .getReference("appointments")
 
@@ -106,7 +107,11 @@ class HomeActivity : AppCompatActivity() {
                 }
 
                 val sortedList = futureList.sortedBy {
-                    sdf.parse("${it.date} ${it.time}")
+                    try {
+                        sdf.parse("${it.date} ${it.time}")
+                    } catch (e: Exception) {
+                        Date() // Fallback jika parsing gagal
+                    }
                 }
 
                 val topTwo = sortedList.take(2)
@@ -124,7 +129,7 @@ class HomeActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("HomeActivity", "Error: ${error.message}")
+                Log.e("HomeActivity", "Error: ${error.message}", error.toException())
             }
         })
     }
@@ -154,11 +159,20 @@ class HomeActivity : AppCompatActivity() {
     private fun showProfileMenu(view: View) {
         val popup = PopupMenu(this, view)
         popup.menuInflater.inflate(R.menu.menu_profile, popup.menu)
+
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.action_profile -> {
+                    val intent = Intent(this, ProfileActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
+
                 R.id.action_logout -> {
-                    auth.signOut()
-                    startActivity(Intent(this, LoginActivity::class.java))
+                    FirebaseAuth.getInstance().signOut()
+                    val intent = Intent(this, LoginActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
                     finish()
                     true
                 }

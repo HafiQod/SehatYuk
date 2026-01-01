@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -10,46 +15,34 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Mediplus">
+        android:theme="@style/Theme.Mediplus"
+        tools:targetApi="31">
 
         <activity
             android:name=".uii.SplashActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Mediplus.NoActionBar">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <activity android:name=".uii.HomeActivity" />
+
+        <activity android:name=".uii.auth.LoginActivity" />
+        <activity android:name=".uii.auth.RegisterActivity" />
+
         <activity
-            android:name=".uii.auth.LoginActivity"
+            android:name=".uii.GamifikasiComposeActivity"
             android:exported="false"
-            android:theme="@style/Theme.Mediplus.NoActionBar" />
-        <activity
-            android:name=".uii.auth.RegisterActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Mediplus.NoActionBar" />
-        <activity
-            android:name=".uii.AppointmentActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Mediplus.NoActionBar" />
-        <activity
-            android:name=".uii.ChatbotActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Mediplus.NoActionBar" />
-        <activity
-            android:name=".uii.GamifikasiActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Mediplus.NoActionBar" />
-        <activity
-            android:name=".uii.NewAppointmentActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Mediplus.NoActionBar" />
-        <activity
-            android:name=".uii.HomeActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Mediplus.NoActionBar" />
+            android:theme="@style/Theme.Mediplus" />
+
+        <activity android:name=".uii.AppointmentActivity" />
+        <activity android:name=".uii.GamifikasiActivity" />
+        <activity android:name=".uii.ProfileActivity" />
+        <activity android:name=".uii.NewAppointmentActivity" />
+        <activity android:name=".uii.ChatbotActivity" />
+        <activity android:name=".uii.NotificationActivity" />
 
     </application>
 

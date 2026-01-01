@@ -105,10 +105,7 @@ class ChatbotActivity : AppCompatActivity() {
                     startActivity(intent)
                     true
                 }
-                R.id.action_settings -> {
-                    Toast.makeText(this, "Menu Settings", Toast.LENGTH_SHORT).show()
-                    true
-                }
+
                 R.id.action_logout -> {
                     FirebaseAuth.getInstance().signOut()
                     val intent = Intent(this, LoginActivity::class.java)
