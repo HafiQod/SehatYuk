@@ -18,27 +18,23 @@
         <androidx.appcompat.widget.Toolbar
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
-
             <ImageView
                 android:layout_width="120dp"
                 android:layout_height="32dp"
                 android:layout_gravity="start|center_vertical"
                 android:src="@drawable/logo" />
-
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
-
                 <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
                     android:src="@drawable/ic_notifications"
                     app:tint="@color/medi_purple_primary" />
-
                 <ImageView
                     android:id="@+id/ivProfile"
                     android:layout_width="wrap_content"
@@ -47,16 +43,14 @@
                     android:src="@drawable/ic_person"
                     app:tint="@color/medi_purple_primary" />
             </LinearLayout>
-
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="75dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvChatHistory"
             android:layout_width="match_parent"
@@ -128,7 +122,6 @@
                 android:src="@drawable/ic_send"
                 app:tint="@color/medi_purple_primary" />
         </LinearLayout>
-
     </RelativeLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
@@ -137,12 +130,13 @@
         android:layout_width="match_parent"
         android:layout_height="75dp"
         android:layout_gravity="bottom"
-        android:background="@drawable/bg_bottom_nav"
+        android:background="@android:color/white"
         android:paddingTop="8dp"
-        app:elevation="8dp"
-        app:itemIconTint="@color/white"
-        app:itemTextColor="@color/white"
+        app:elevation="16dp"
         app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_nav_menu" />
+
+        app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@color/bottom_nav_tint_selector"
+        app:itemTextColor="@color/bottom_nav_tint_selector" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -2,11 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -18,7 +13,7 @@
         android:theme="@style/Theme.Mediplus">
 
         <activity
-            android:name=".uii.auth.LoginActivity"
+            android:name=".uii.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.Mediplus.NoActionBar">
             <intent-filter>
@@ -28,41 +23,33 @@
         </activity>
 
         <activity
+            android:name=".uii.auth.LoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Mediplus.NoActionBar" />
+        <activity
             android:name=".uii.auth.RegisterActivity"
             android:exported="false"
             android:theme="@style/Theme.Mediplus.NoActionBar" />
-
         <activity
             android:name=".uii.AppointmentActivity"
             android:exported="false"
             android:theme="@style/Theme.Mediplus.NoActionBar" />
-
         <activity
             android:name=".uii.ChatbotActivity"
             android:exported="false"
             android:theme="@style/Theme.Mediplus.NoActionBar" />
-
         <activity
             android:name=".uii.GamifikasiActivity"
             android:exported="false"
             android:theme="@style/Theme.Mediplus.NoActionBar" />
-
         <activity
             android:name=".uii.NewAppointmentActivity"
             android:exported="false"
             android:theme="@style/Theme.Mediplus.NoActionBar" />
-
         <activity
             android:name=".uii.HomeActivity"
-            android:exported="false"
+            android:exported="true"
             android:theme="@style/Theme.Mediplus.NoActionBar" />
-
-        <activity
-            android:name=".uii.ProfileActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Mediplus.NoActionBar" />
-
-        <receiver android:name=".uii.NotificationReceiver" />
 
     </application>
 

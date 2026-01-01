@@ -49,9 +49,8 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="60dp"
+        android:layout_marginBottom="75dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -120,11 +119,13 @@
         android:layout_width="match_parent"
         android:layout_height="75dp"
         android:layout_gravity="bottom"
-        android:background="@drawable/bg_bottom_nav"
+        android:background="@android:color/white"
         android:paddingTop="8dp"
-        app:elevation="8dp"
-        app:itemIconTint="@color/white"
-        app:itemTextColor="@color/white"
+        app:elevation="16dp"
         app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_nav_menu" />
+
+        app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@color/bottom_nav_tint_selector"
+        app:itemTextColor="@color/bottom_nav_tint_selector" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

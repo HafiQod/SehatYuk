@@ -56,8 +56,11 @@ class HomeActivity : AppCompatActivity() {
 
         ivProfile.setOnClickListener { showProfileMenu(it) }
 
+        // --- PERBAIKAN DI SINI ---
         btnStartMission.setOnClickListener {
-            Toast.makeText(this, "Mission Started!", Toast.LENGTH_SHORT).show()
+            // Membuka GamifikasiActivity
+            val intent = Intent(this, GamifikasiActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -66,9 +69,7 @@ class HomeActivity : AppCompatActivity() {
         rvHomeAppointments.setHasFixedSize(true)
         appointmentList = arrayListOf()
 
-        // Kita gunakan Adapter yang sama, tapi nanti datanya cuma 2
         adapter = AppointmentAdapter(appointmentList) {
-            // Opsional: Klik item di home mau ngapain? (Misal buka detail)
             Toast.makeText(this, "Membuka detail: ${it.purpose}", Toast.LENGTH_SHORT).show()
         }
         rvHomeAppointments.adapter = adapter
@@ -79,7 +80,6 @@ class HomeActivity : AppCompatActivity() {
         val ref = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
             .getReference("appointments")
 
-        // Query ambil data user spesifik
         ref.orderByChild("userId").equalTo(userId).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 appointmentList.clear()
@@ -92,35 +92,28 @@ class HomeActivity : AppCompatActivity() {
                     }
                 }
 
-                // --- LOGIC SORTING & FILTERING (INTI PERBAIKAN) ---
-
-                // 1. Format tanggal untuk komparasi
+                // Logic Sorting & Filtering
                 val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                val now = Date() // Waktu sekarang
+                val now = Date()
 
-                // 2. Filter: Hanya ambil yang waktunya BELUM LEWAT (Future)
                 val futureList = tempList.filter {
                     try {
                         val dateObj = sdf.parse("${it.date} ${it.time}")
                         dateObj != null && dateObj.after(now)
                     } catch (e: Exception) {
-                        false // Skip jika format tanggal error
+                        false
                     }
                 }
 
-                // 3. Sorting: Urutkan dari yang paling dekat waktunya (Ascending)
                 val sortedList = futureList.sortedBy {
                     sdf.parse("${it.date} ${it.time}")
                 }
 
-                // 4. Limit: Ambil maksimal 2 item teratas
                 val topTwo = sortedList.take(2)
 
-                // 5. Masukkan ke adapter
                 appointmentList.addAll(topTwo)
                 adapter.notifyDataSetChanged()
 
-                // Toggle visibility text kosong
                 if (appointmentList.isEmpty()) {
                     tvHomeEmpty.visibility = View.VISIBLE
                     rvHomeAppointments.visibility = View.GONE
@@ -136,21 +129,20 @@ class HomeActivity : AppCompatActivity() {
         })
     }
 
-    // Setup Navbar agar bisa pindah halaman
     private fun setupBottomNav() {
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNav.selectedItemId = R.id.nav_home // Set aktif di Home
+        bottomNav.selectedItemId = R.id.nav_home
 
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> true
                 R.id.nav_appointment -> {
                     startActivity(Intent(this, AppointmentActivity::class.java))
-                    overridePendingTransition(0, 0) // Hilangkan animasi agar smooth
+                    overridePendingTransition(0, 0)
                     true
                 }
                 R.id.nav_chatbot -> {
-                    startActivity(Intent(this, ChatbotActivity::class.java)) // Pastikan ChatbotActivity ada
+                    startActivity(Intent(this, ChatbotActivity::class.java))
                     overridePendingTransition(0, 0)
                     true
                 }
