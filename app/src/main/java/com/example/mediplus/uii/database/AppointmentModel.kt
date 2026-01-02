@@ -12,5 +12,6 @@ data class AppointmentModel(
     val address: String = "",
     val idNumber: String = "",
     val purpose: String = "",
-    val status: String = "Pending"
+    val status: String = "Pending",
+    val feedback: String = "" // <-- Tambahan Baru
 )
