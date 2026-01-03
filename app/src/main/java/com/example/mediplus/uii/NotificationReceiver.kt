@@ -9,10 +9,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.mediplus.R
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 
 class NotificationReceiver : BroadcastReceiver() {
 
@@ -20,7 +23,41 @@ class NotificationReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra("title") ?: "Appointment Reminder"
         val message = intent.getStringExtra("message") ?: "You have an upcoming appointment!"
 
+        // 1. Tampilkan Notifikasi
         showNotification(context, title, message)
+
+        // 2. Update Gamifikasi: On Time Hero
+        // Poin bertambah saat notifikasi muncul (sesuai request)
+        updateOnTimeQuest()
+    }
+
+    private fun updateOnTimeQuest() {
+        // Ambil User yang sedang login di HP ini
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null) {
+            val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
+            val questRef = database.getReference("users").child(user.uid).child("quests").child("on_time")
+
+            // Pakai Transaction biar aman (tidak balapan data)
+            questRef.runTransaction(object : Transaction.Handler {
+                override fun doTransaction(currentData: MutableData): Transaction.Result {
+                    var currentVal = currentData.getValue(Int::class.java) ?: 0
+                    if (currentVal < 5) { // Maksimal 5
+                        currentVal++
+                    }
+                    currentData.value = currentVal
+                    return Transaction.success(currentData)
+                }
+
+                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
+                    if (error != null) {
+                        Log.e("NotificationReceiver", "Gagal update quest: ${error.message}")
+                    } else {
+                        Log.d("NotificationReceiver", "Quest On Time Updated!")
+                    }
+                }
+            })
+        }
     }
 
     private fun showNotification(context: Context, title: String, message: String) {
@@ -36,7 +73,8 @@ class NotificationReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val openAppIntent = Intent(context, AppointmentActivity::class.java).apply {
+        // Saat diklik, arahkan ke NotificationActivity agar user bisa "Mark as Done"
+        val openAppIntent = Intent(context, NotificationActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = PendingIntent.getActivity(
@@ -44,7 +82,7 @@ class NotificationReceiver : BroadcastReceiver() {
         )
 
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_notifications)
+            .setSmallIcon(R.drawable.ic_notifications) // Pastikan icon ini ada
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

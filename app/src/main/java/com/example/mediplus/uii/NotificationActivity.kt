@@ -28,6 +28,9 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class NotificationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -174,7 +177,7 @@ fun NotificationScreen(onBackClick: () -> Unit) {
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color(0xFFF8F9FA)) // Background sedikit lebih terang
+                .background(Color(0xFFF8F9FA))
                 .padding(16.dp)
         ) {
             if (isLoading) {
@@ -208,6 +211,7 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                                 appt = appt,
                                 isCompleted = false,
                                 primaryColor = primaryColor,
+                                context = context, // Kirim context untuk Toast
                                 onActionClick = {
                                     selectedAppointmentId = appt.id
                                     showConfirmationDialog = true
@@ -236,6 +240,7 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                                 appt = appt,
                                 isCompleted = true,
                                 primaryColor = primaryColor,
+                                context = context,
                                 onActionClick = {}
                             )
                         }
@@ -251,8 +256,15 @@ fun NotificationItem(
     appt: AppointmentModel,
     isCompleted: Boolean,
     primaryColor: Color,
+    context: Context,
     onActionClick: () -> Unit
 ) {
+    // LOGIKA CEK WAKTU
+    val isPassed = isAppointmentPassed(appt.date, appt.time)
+
+    // Warna tombol: Ungu jika sudah lewat waktunya, Abu-abu jika belum
+    val buttonColor = if (isPassed) primaryColor else Color.Gray
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -304,8 +316,16 @@ fun NotificationItem(
 
             if (!isCompleted) {
                 Button(
-                    onClick = onActionClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                    onClick = {
+                        // LOGIKA KLIK TOMBOL
+                        if (isPassed) {
+                            onActionClick() // Lanjut konfirmasi
+                        } else {
+                            // Tampilkan pesan error jika belum waktunya
+                            Toast.makeText(context, "Jadwal belum terlewati, tidak bisa diselesaikan sekarang.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -335,6 +355,29 @@ fun EmptyStateMessage(msg: String) {
             fontSize = 14.sp,
             color = Color.Gray
         )
+    }
+}
+
+// FUNGSI HELPER: Cek apakah Appointment sudah lewat?
+fun isAppointmentPassed(dateStr: String, timeStr: String): Boolean {
+    return try {
+        // Format harus sama persis dengan yang disimpan di NewAppointmentActivity
+        // Date: "dd/MM/yyyy", Time: "HH:mm"
+        val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val dateTimeString = "$dateStr $timeStr"
+
+        val appointmentDate = format.parse(dateTimeString)
+        val currentDate = Date() // Waktu sekarang
+
+        // Return true jika Waktu Appointment < Waktu Sekarang
+        if (appointmentDate != null) {
+            currentDate.after(appointmentDate)
+        } else {
+            false
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false // Default jika parsing gagal
     }
 }
 

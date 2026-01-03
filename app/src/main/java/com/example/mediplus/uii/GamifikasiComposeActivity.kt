@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -41,20 +42,21 @@ class GamifikasiComposeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         auth = FirebaseAuth.getInstance()
-        // Pastikan URL database sesuai
+        // PENTING: Pastikan URL Database sesuai
         database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com").getReference("users")
 
         val currentUser = auth.currentUser
 
         if (currentUser == null) {
-            Toast.makeText(this, "User tidak ditemukan, silakan login ulang", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "User tidak ditemukan", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
         setContent {
-            // State untuk menampung data dari Firebase
+            // State untuk menampung data
             var userName by remember { mutableStateOf("Loading...") }
+            // Map untuk menyimpan progress tiap misi (Key: Nama Misi, Value: Progress 0-5)
             var quests by remember { mutableStateOf(mapOf(
                 "on_time" to 0,
                 "routine" to 0,
@@ -62,18 +64,18 @@ class GamifikasiComposeActivity : ComponentActivity() {
                 "feedback" to 0
             )) }
 
-            // Mengambil data dari Firebase saat halaman dibuka
+            // Mengambil data Realtime dari Firebase
             LaunchedEffect(currentUser.uid) {
                 database.child(currentUser.uid).addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         if (snapshot.exists()) {
-                            // 1. Ambil Nama
+                            // 1. Ambil Nama User
                             val name = snapshot.child("fullName").getValue(String::class.java)
                                 ?: snapshot.child("username").getValue(String::class.java)
                                 ?: "User"
                             userName = name
 
-                            // 2. Ambil Quest Progress
+                            // 2. Ambil Progress Quest (Pastikan struktur di Firebase: users -> uid -> quests -> on_time)
                             val qOnTime = snapshot.child("quests/on_time").getValue(Int::class.java) ?: 0
                             val qRoutine = snapshot.child("quests/routine").getValue(Int::class.java) ?: 0
                             val qReading = snapshot.child("quests/reading").getValue(Int::class.java) ?: 0
@@ -89,12 +91,12 @@ class GamifikasiComposeActivity : ComponentActivity() {
                     }
 
                     override fun onCancelled(error: DatabaseError) {
-                        Toast.makeText(this@GamifikasiComposeActivity, "Gagal: ${error.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@GamifikasiComposeActivity, "Gagal memuat data", Toast.LENGTH_SHORT).show()
                     }
                 })
             }
 
-            // Hitung Total Point untuk Badge
+            // Hitung Total Point (Dijumlahkan dari semua misi)
             val totalPoints = quests.values.sum()
 
             GamifikasiScreen(
@@ -106,6 +108,12 @@ class GamifikasiComposeActivity : ComponentActivity() {
                     intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     startActivity(intent)
                     finish()
+                },
+                onArticleClick = {
+                    // TODO: Arahkan ke Halaman Artikel
+                    Toast.makeText(this, "Membuka Healthy Reader...", Toast.LENGTH_SHORT).show()
+                    // val intent = Intent(this, ArticleActivity::class.java)
+                    // startActivity(intent)
                 }
             )
         }
@@ -117,10 +125,11 @@ fun GamifikasiScreen(
     userName: String,
     totalPoints: Int,
     quests: Map<String, Int>,
-    onHomeClick: () -> Unit
+    onHomeClick: () -> Unit,
+    onArticleClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    val maxPoints = 20
+    val maxPoints = 20 // 4 misi x 5 poin
 
     Box(
         modifier = Modifier
@@ -146,19 +155,49 @@ fun GamifikasiScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier.padding(16.dp)) {
-                // Header (Profile & Badge)
+                // Header (Profile, Total Poin & Badge Logic)
                 HeaderSection(userName, totalPoints, maxPoints)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // List Quest
-                QuestItem("On Time Hero", quests["on_time"] ?: 0, 5)
+                // --- DAFTAR MISI ---
+
+                // 1. On Time Hero (Datang Tepat Waktu)
+                QuestItem(
+                    title = "On Time Hero",
+                    current = quests["on_time"] ?: 0,
+                    max = 5,
+                    // Misi ini otomatis nambah by system, user tidak perlu klik
+                    onClick = { /* Tidak ada aksi klik, hanya display */ }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                QuestItem("Routine Check-up", quests["routine"] ?: 0, 5)
+
+                // 2. Routine Check-up (1 bulan sekali)
+                QuestItem(
+                    title = "Routine Check-up",
+                    current = quests["routine"] ?: 0,
+                    max = 5,
+                    onClick = { /* Tidak ada aksi klik */ }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                QuestItem("Healthy Reader", quests["reading"] ?: 0, 5)
+
+                // 3. Healthy Reader (Baca Artikel) - BISA DIKLIK
+                QuestItem(
+                    title = "Healthy Reader",
+                    current = quests["reading"] ?: 0,
+                    max = 5,
+                    onClick = onArticleClick, // Aksi pindah halaman
+                    isClickable = true
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                QuestItem("Feedback Appointment", quests["feedback"] ?: 0, 5)
+
+                // 4. Feedback Appointment (Isi Feedback)
+                QuestItem(
+                    title = "Feedback Appointment",
+                    current = quests["feedback"] ?: 0,
+                    max = 5,
+                    onClick = { /* Biasanya trigger dari halaman feedback selesai */ }
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -179,12 +218,12 @@ fun GamifikasiScreen(
 
 @Composable
 fun HeaderSection(userName: String, totalPoints: Int, maxPoints: Int) {
-    // Logika penentuan Badge & Kata motivasi
+    // Logika Level Badge berdasarkan Total Poin
     val mainBadgeRes = when {
-        totalPoints >= 20 -> R.drawable.badge_gold
-        totalPoints >= 10 -> R.drawable.badge_silver
-        totalPoints >= 5 -> R.drawable.badge_bronze
-        else -> R.drawable.badge_abu
+        totalPoints >= 20 -> R.drawable.badge_gold // Hero
+        totalPoints >= 10 -> R.drawable.badge_silver // Hampir Gold
+        totalPoints >= 5 -> R.drawable.badge_bronze  // Pemula
+        else -> R.drawable.badge_abu // Belum ada badge
     }
 
     val motivationalText = when {
@@ -201,16 +240,16 @@ fun HeaderSection(userName: String, totalPoints: Int, maxPoints: Int) {
     ) {
         Box(modifier = Modifier.padding(16.dp)) {
             Column {
-                // Baris Profile
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    // Profile Placeholder
                     Box(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(Color.Gray) // Placeholder bg_profile_circle
+                            .background(Color.Gray)
                     )
                     Text(
                         text = userName,
@@ -221,6 +260,7 @@ fun HeaderSection(userName: String, totalPoints: Int, maxPoints: Int) {
                             .padding(start = 16.dp)
                             .weight(1f)
                     )
+                    // Badge Utama Besar
                     Image(
                         painter = painterResource(id = mainBadgeRes),
                         contentDescription = "Main Badge",
@@ -230,7 +270,7 @@ fun HeaderSection(userName: String, totalPoints: Int, maxPoints: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Progress Bar Badge
+                // Progress Bar Total Poin
                 Box(modifier = Modifier.fillMaxWidth()) {
                     LinearProgressIndicator(
                         progress = { totalPoints / maxPoints.toFloat() },
@@ -243,6 +283,7 @@ fun HeaderSection(userName: String, totalPoints: Int, maxPoints: Int) {
                         trackColor = Color.LightGray,
                     )
 
+                    // Indikator Badge Kecil
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -288,11 +329,19 @@ fun HeaderSection(userName: String, totalPoints: Int, maxPoints: Int) {
 }
 
 @Composable
-fun QuestItem(title: String, current: Int, max: Int) {
+fun QuestItem(
+    title: String,
+    current: Int,
+    max: Int,
+    onClick: () -> Unit,
+    isClickable: Boolean = false
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isClickable) Modifier.clickable { onClick() } else Modifier) // Hanya bisa diklik jika isClickable true
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -304,12 +353,23 @@ fun QuestItem(title: String, current: Int, max: Int) {
                 modifier = Modifier.size(40.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = title,
-                fontSize = 16.sp,
-                color = MediTextPrimary,
-                modifier = Modifier.weight(1f)
-            )
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    color = MediTextPrimary
+                )
+                // Jika Healthy Reader, tambahkan hint "Tap to read"
+                if (isClickable) {
+                    Text(
+                        text = "Tap to read articles",
+                        fontSize = 10.sp,
+                        color = MediPurplePrimary
+                    )
+                }
+            }
+
             Column(horizontalAlignment = Alignment.End) {
                 LinearProgressIndicator(
                     progress = { current / max.toFloat() },
