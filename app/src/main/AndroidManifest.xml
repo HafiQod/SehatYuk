@@ -44,6 +44,11 @@
         <activity android:name=".uii.ChatbotActivity" />
         <activity android:name=".uii.NotificationActivity" />
 
+        <activity
+            android:name=".uii.HealthyReaderActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Mediplus" />
+
     </application>
 
 </manifest>

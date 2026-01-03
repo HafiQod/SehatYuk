@@ -5,11 +5,12 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge // [Tambahkan Ini]
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.* // Pastikan import ini ada
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +34,10 @@ import kotlinx.coroutines.delay
 class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 1. Aktifkan Edge-to-Edge agar fullscreen sampai belakang status bar & nav bar
+        enableEdgeToEdge()
+
         setContent {
             SplashScreen {
                 val intent = if (FirebaseAuth.getInstance().currentUser != null) {
@@ -53,7 +58,6 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
     val alpha = remember { Animatable(0f) }
 
     LaunchedEffect(key1 = true) {
-        // Animasi logo muncul (scale & fade in)
         scale.animateTo(
             targetValue = 1f,
             animationSpec = tween(durationMillis = 1000)
@@ -62,14 +66,14 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
             targetValue = 1f,
             animationSpec = tween(durationMillis = 1000)
         )
-        delay(2000) // Tahan 2 detik
+        delay(2000)
         onAnimationFinished()
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF6C5CE7)), // Warna ungu MediPlus
+            .background(Color(0xFF6C5CE7)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -94,6 +98,8 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                // 2. Tambahkan navigationBarsPadding agar teks naik sedikit di atas tombol navigasi
+                .navigationBarsPadding()
                 .padding(bottom = 50.dp)
                 .alpha(alpha.value)
         )
