@@ -24,10 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.example.mediplus.R
 import com.example.mediplus.uii.database.AppointmentModel
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -46,7 +43,6 @@ class NotificationActivity : ComponentActivity() {
 fun NotificationScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
 
-    // Mengambil warna dari colors.xml
     val primaryColor = colorResource(id = R.color.medi_purple_primary)
     val textSecondary = colorResource(id = R.color.medi_text_secondary)
 
@@ -56,7 +52,7 @@ fun NotificationScreen(onBackClick: () -> Unit) {
     // State untuk Dialog
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
-    var selectedAppointmentId by remember { mutableStateOf("") }
+    var selectedAppointment by remember { mutableStateOf<AppointmentModel?>(null) }
     var feedbackText by remember { mutableStateOf("") }
 
     // Mengambil data dari Firebase
@@ -76,6 +72,7 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                                 tempList.add(appt)
                             }
                         }
+                        // Urutkan dari yang terbaru (reverse)
                         appointmentList = tempList.reversed()
                         isLoading = false
                     }
@@ -88,7 +85,7 @@ fun NotificationScreen(onBackClick: () -> Unit) {
         }
     }
 
-    // --- DIALOG KONFIRMASI (Are you sure?) ---
+    // --- DIALOG KONFIRMASI ---
     if (showConfirmationDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmationDialog = false },
@@ -98,7 +95,7 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                 Button(
                     onClick = {
                         showConfirmationDialog = false
-                        showFeedbackDialog = true // Lanjut ke dialog feedback
+                        showFeedbackDialog = true
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                 ) {
@@ -114,7 +111,7 @@ fun NotificationScreen(onBackClick: () -> Unit) {
         )
     }
 
-    // --- DIALOG FEEDBACK (Input Feedback) ---
+    // --- DIALOG FEEDBACK ---
     if (showFeedbackDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -137,8 +134,8 @@ fun NotificationScreen(onBackClick: () -> Unit) {
             confirmButton = {
                 Button(
                     onClick = {
-                        if (selectedAppointmentId.isNotEmpty()) {
-                            submitFeedbackAndComplete(selectedAppointmentId, feedbackText, context)
+                        if (selectedAppointment != null) {
+                            submitFeedbackAndComplete(selectedAppointment!!, feedbackText, context)
                             showFeedbackDialog = false
                             feedbackText = ""
                         }
@@ -211,9 +208,9 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                                 appt = appt,
                                 isCompleted = false,
                                 primaryColor = primaryColor,
-                                context = context, // Kirim context untuk Toast
+                                context = context,
                                 onActionClick = {
-                                    selectedAppointmentId = appt.id
+                                    selectedAppointment = appt
                                     showConfirmationDialog = true
                                 }
                             )
@@ -259,10 +256,7 @@ fun NotificationItem(
     context: Context,
     onActionClick: () -> Unit
 ) {
-    // LOGIKA CEK WAKTU
     val isPassed = isAppointmentPassed(appt.date, appt.time)
-
-    // Warna tombol: Ungu jika sudah lewat waktunya, Abu-abu jika belum
     val buttonColor = if (isPassed) primaryColor else Color.Gray
 
     Card(
@@ -294,14 +288,8 @@ fun NotificationItem(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Patient: ${appt.fullName}", fontSize = 13.sp, color = Color.Gray)
 
-            Text(
-                text = "Patient: ${appt.fullName}",
-                fontSize = 13.sp,
-                color = Color.Gray
-            )
-
-            // Jika completed dan ada feedback, tampilkan feedback
             if (isCompleted && appt.feedback.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -317,12 +305,10 @@ fun NotificationItem(
             if (!isCompleted) {
                 Button(
                     onClick = {
-                        // LOGIKA KLIK TOMBOL
                         if (isPassed) {
-                            onActionClick() // Lanjut konfirmasi
+                            onActionClick()
                         } else {
-                            // Tampilkan pesan error jika belum waktunya
-                            Toast.makeText(context, "Jadwal belum terlewati, tidak bisa diselesaikan sekarang.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Please wait until the appointment time.", Toast.LENGTH_SHORT).show()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
@@ -336,7 +322,7 @@ fun NotificationItem(
                     text = "✓ Completed",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4CAF50), // Hijau Sukses
+                    color = Color(0xFF4CAF50),
                     modifier = Modifier.align(Alignment.End)
                 )
             }
@@ -347,7 +333,9 @@ fun NotificationItem(
 @Composable
 fun EmptyStateMessage(msg: String) {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -358,45 +346,108 @@ fun EmptyStateMessage(msg: String) {
     }
 }
 
-// FUNGSI HELPER: Cek apakah Appointment sudah lewat?
 fun isAppointmentPassed(dateStr: String, timeStr: String): Boolean {
     return try {
-        // Format harus sama persis dengan yang disimpan di NewAppointmentActivity
-        // Date: "dd/MM/yyyy", Time: "HH:mm"
         val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         val dateTimeString = "$dateStr $timeStr"
-
         val appointmentDate = format.parse(dateTimeString)
-        val currentDate = Date() // Waktu sekarang
-
-        // Return true jika Waktu Appointment < Waktu Sekarang
-        if (appointmentDate != null) {
-            currentDate.after(appointmentDate)
-        } else {
-            false
-        }
+        val currentDate = Date()
+        appointmentDate != null && currentDate.after(appointmentDate)
     } catch (e: Exception) {
-        e.printStackTrace()
-        false // Default jika parsing gagal
+        false
     }
 }
 
-// Fungsi Simpan ke Firebase (Status + Feedback)
-fun submitFeedbackAndComplete(apptId: String, feedback: String, context: Context) {
+// === FUNGSI LOGIKA GAMIFIKASI ===
+fun submitFeedbackAndComplete(appt: AppointmentModel, feedback: String, context: Context) {
+    val user = FirebaseAuth.getInstance().currentUser ?: return
     val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
-    val ref = database.getReference("appointments").child(apptId)
 
-    // Update multiple fields secara bersamaan
+    // 1. Update Appointment Status
+    val apptRef = database.getReference("appointments").child(appt.id)
     val updates = mapOf(
         "status" to "Done",
         "feedback" to feedback
     )
 
-    ref.updateChildren(updates)
+    apptRef.updateChildren(updates)
         .addOnSuccessListener {
-            Toast.makeText(context, "Appointment completed! Thank you for your feedback.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Completed! Checking rewards...", Toast.LENGTH_SHORT).show()
+
+            // 2. Jalankan Logika Poin
+            checkGamificationPoints(user.uid, appt, database)
         }
         .addOnFailureListener {
-            Toast.makeText(context, "Failed to update status", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Failed to update", Toast.LENGTH_SHORT).show()
         }
+}
+
+fun checkGamificationPoints(userId: String, appt: AppointmentModel, database: FirebaseDatabase) {
+    val userRef = database.getReference("users").child(userId).child("quests")
+
+    userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            val now = System.currentTimeMillis()
+            val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+
+            // --- 1. LOGIKA ON TIME HERO ---
+            // Syarat: Mark as done < 10 menit setelah jadwal
+            try {
+                val apptDate = format.parse("${appt.date} ${appt.time}")
+                if (apptDate != null) {
+                    val diff = now - apptDate.time // Selisih waktu sekarang dan jadwal (ms)
+                    val tenMinutesInMillis = 10 * 60 * 1000
+
+                    // Jika diff positif (sudah lewat) DAN kurang dari 10 menit
+                    if (diff in 1..tenMinutesInMillis) {
+                        incrementQuestPoint(userRef, "on_time")
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            // --- 2. LOGIKA ROUTINE CHECK-UP ---
+            // Syarat: Purpose mengandung "Check-up" DAN Cooldown 1 Minggu
+            if (appt.purpose.contains("Check-up", ignoreCase = true) || appt.purpose.contains("Check up", ignoreCase = true)) {
+                val lastRoutine = snapshot.child("last_routine_date").getValue(Long::class.java) ?: 0L
+                if (isOneWeekPassed(lastRoutine, now)) {
+                    incrementQuestPoint(userRef, "routine")
+                    userRef.child("last_routine_date").setValue(now)
+                }
+            }
+
+            // --- 3. LOGIKA FEEDBACK APPOINTMENT ---
+            // Syarat: Cooldown 1 Minggu (Feedback selalu terisi di fungsi ini)
+            val lastFeedback = snapshot.child("last_feedback_date").getValue(Long::class.java) ?: 0L
+            if (isOneWeekPassed(lastFeedback, now)) {
+                incrementQuestPoint(userRef, "feedback")
+                userRef.child("last_feedback_date").setValue(now)
+            }
+        }
+
+        override fun onCancelled(error: DatabaseError) {}
+    })
+}
+
+// Helper: Cek apakah sudah lewat 1 minggu (7 hari)
+fun isOneWeekPassed(lastDate: Long, currentDate: Long): Boolean {
+    val oneWeekInMillis = 7 * 24 * 60 * 60 * 1000L
+    return (currentDate - lastDate) >= oneWeekInMillis
+}
+
+// Helper: Tambah Poin (Max 5)
+fun incrementQuestPoint(userQuestRef: DatabaseReference, questType: String) {
+    userQuestRef.child(questType).runTransaction(object : Transaction.Handler {
+        override fun doTransaction(currentData: MutableData): Transaction.Result {
+            var currentVal = currentData.getValue(Int::class.java) ?: 0
+            if (currentVal < 5) {
+                currentVal++
+            }
+            currentData.value = currentVal
+            return Transaction.success(currentData)
+        }
+
+        override fun onComplete(error: DatabaseError?, committed: Boolean, snapshot: DataSnapshot?) {}
+    })
 }
