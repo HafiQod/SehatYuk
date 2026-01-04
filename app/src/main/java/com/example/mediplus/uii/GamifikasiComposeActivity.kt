@@ -1,10 +1,13 @@
 package com.example.mediplus.uii
 
 import android.content.Intent
+import android.graphics.Color as AndroidColor // Alias untuk warna Android
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge // WAJIB: Untuk membuat navigasi transparan
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +43,13 @@ class GamifikasiComposeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 1. AKTIFKAN EDGE-TO-EDGE (Navigasi Melayang/Transparan)
+        // Kita set status bar & nav bar icon menjadi terang (cocok untuk background ungu gelap)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
+        )
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com").getReference("users")
@@ -103,7 +113,6 @@ class GamifikasiComposeActivity : ComponentActivity() {
                     finish()
                 },
                 onArticleClick = {
-                    // --- UPDATE DI SINI: Menyambungkan ke HealthyReaderActivity ---
                     val intent = Intent(this, HealthyReaderActivity::class.java)
                     startActivity(intent)
                 }
@@ -123,6 +132,7 @@ fun GamifikasiScreen(
     val scrollState = rememberScrollState()
     val maxPoints = 20
 
+    // Box Utama (Background Ungu Full Layar)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -131,9 +141,14 @@ fun GamifikasiScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 32.dp)
+                // 2. Padding System Bar (Agar konten tidak ketutup Status Bar & Navigasi)
+                .statusBarsPadding() // Padding atas otomatis (jam/baterai)
+                .navigationBarsPadding() // Padding bawah otomatis (navigasi HP)
                 .verticalScroll(scrollState)
         ) {
+            // Padding tambahan agar logo tidak terlalu mepet atas
+            Spacer(modifier = Modifier.height(16.dp))
+
             Image(
                 painter = painterResource(id = R.drawable.logoputih),
                 contentDescription = "Logo",
@@ -168,7 +183,7 @@ fun GamifikasiScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 3. Healthy Reader (BISA DIKLIK -> Navigasi ke Artikel)
+                // 3. Healthy Reader
                 QuestItem(
                     title = "Healthy Reader",
                     current = quests["reading"] ?: 0,
@@ -196,6 +211,8 @@ fun GamifikasiScreen(
                 ) {
                     Text("Home")
                 }
+
+                // Spacer bawah agar scroll lebih enak
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }

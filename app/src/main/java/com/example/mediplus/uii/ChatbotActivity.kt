@@ -34,10 +34,7 @@ class ChatbotActivity : AppCompatActivity() {
     private lateinit var btnSend: ImageView
     private lateinit var layoutWelcome: LinearLayout
     private lateinit var progressBar: ProgressBar
-
-    // Tambahan variabel Profile
     private lateinit var ivProfile: ImageView
-
     private val chatList = mutableListOf<ChatMessage>()
     private lateinit var chatAdapter: ChatAdapter
 
