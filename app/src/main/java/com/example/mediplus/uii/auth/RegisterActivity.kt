@@ -17,7 +17,6 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var edtUsername: EditText
     private lateinit var edtPassword: EditText
 
-    // Inisialisasi Database
     private val database = FirebaseDatabase.getInstance().reference
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +34,6 @@ class RegisterActivity : AppCompatActivity() {
             val email = edtUsername.text.toString().trim()
             val password = edtPassword.text.toString().trim()
 
-            // Buat username sederhana dari email (contoh: budi@gmail.com -> budi)
             val username = if (email.contains("@")) email.split("@")[0] else email
 
             if (email.isEmpty() || password.isEmpty()) {
@@ -53,7 +51,6 @@ class RegisterActivity : AppCompatActivity() {
                     if (task.isSuccessful) {
                         val userId = auth.currentUser?.uid
                         if (userId != null) {
-                            // SIMPAN DATA QUEST AWAL (Default 0)
                             saveDefaultUserData(userId, username, email)
                         }
                     } else {

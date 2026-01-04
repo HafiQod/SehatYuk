@@ -44,7 +44,6 @@ class NewAppointmentActivity : AppCompatActivity() {
     private lateinit var edtDob: EditText
     private lateinit var edtAddress: EditText
     private lateinit var edtIdNumber: EditText
-
     private lateinit var cbGeneral: CheckBox
     private lateinit var cbMaternal: CheckBox
     private lateinit var cbDental: CheckBox
@@ -66,8 +65,7 @@ class NewAppointmentActivity : AppCompatActivity() {
             saveAppointment()
         }
 
-        // Setup Icon Notifikasi (Pastikan ID ada di XML)
-        val ivNotification = findViewById<ImageView>(R.id.ivNotification) // Sesuaikan ID
+        val ivNotification = findViewById<ImageView>(R.id.ivNotification)
         ivNotification?.setOnClickListener {
             startActivity(Intent(this, NotificationActivity::class.java))
         }
@@ -172,7 +170,7 @@ class NewAppointmentActivity : AppCompatActivity() {
             val calendar = Calendar.getInstance()
             if (dateObj != null) {
                 calendar.time = dateObj
-                calendar.add(Calendar.MINUTE, -30) // Reminder 30 menit sebelum
+                calendar.add(Calendar.MINUTE, -30)
                 val triggerTime = calendar.timeInMillis
                 val now = System.currentTimeMillis()
 
@@ -235,22 +233,18 @@ class NewAppointmentActivity : AppCompatActivity() {
             return
         }
 
-        // --- VALIDASI UNIK JAM (LOGIKA BARU) ---
         btnSave.isEnabled = false
         btnSave.text = "Checking Availability..."
 
         val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
         val ref = database.getReference("appointments")
 
-        // Query: Cari appointment di TANGGAL yang sama
         ref.orderByChild("date").equalTo(date).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var isTaken = false
 
-                // Cek satu-satu anak (appointment) di tanggal tersebut
                 for (child in snapshot.children) {
                     val existingTime = child.child("time").getValue(String::class.java)
-                    // Jika jam nya sama persis
                     if (existingTime == time) {
                         isTaken = true
                         break
@@ -258,12 +252,10 @@ class NewAppointmentActivity : AppCompatActivity() {
                 }
 
                 if (isTaken) {
-                    // Jika sudah diambil
                     btnSave.isEnabled = true
                     btnSave.text = "Make Appointment"
                     Toast.makeText(this@NewAppointmentActivity, "Jam $time pada $date sudah terisi. Pilih jam lain.", Toast.LENGTH_LONG).show()
                 } else {
-                    // Jika kosong, Simpan
                     val appointmentId = ref.push().key ?: return
                     val newAppt = AppointmentModel(
                         id = appointmentId,

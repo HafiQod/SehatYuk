@@ -35,7 +35,6 @@ class HomeActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
 
-        // Cek login
         if (auth.currentUser == null) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
@@ -54,10 +53,14 @@ class HomeActivity : AppCompatActivity() {
         val ivProfile = findViewById<ImageView>(R.id.ivProfile)
         val btnStartMission = findViewById<Button>(R.id.btnStartMission)
 
+        val ivNotification = findViewById<ImageView>(R.id.ivNotification)
+
+        ivNotification.setOnClickListener {
+            startActivity(Intent(this, NotificationActivity::class.java))
+        }
+
         ivProfile.setOnClickListener { showProfileMenu(it) }
 
-        // --- UPDATE PENTING DI SINI ---
-        // Tombol ini sekarang membuka halaman Gamifikasi versi Jetpack Compose
         btnStartMission.setOnClickListener {
             val intent = Intent(this, GamifikasiComposeActivity::class.java)
             startActivity(intent)
@@ -77,7 +80,6 @@ class HomeActivity : AppCompatActivity() {
 
     private fun loadUpcomingAppointments() {
         val userId = auth.currentUser?.uid ?: return
-        // Pastikan URL database ini sesuai dengan console Firebase kamu
         val ref = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
             .getReference("appointments")
 
@@ -93,7 +95,6 @@ class HomeActivity : AppCompatActivity() {
                     }
                 }
 
-                // Logic Sorting & Filtering
                 val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                 val now = Date()
 
@@ -110,7 +111,7 @@ class HomeActivity : AppCompatActivity() {
                     try {
                         sdf.parse("${it.date} ${it.time}")
                     } catch (e: Exception) {
-                        Date() // Fallback jika parsing gagal
+                        Date()
                     }
                 }
 

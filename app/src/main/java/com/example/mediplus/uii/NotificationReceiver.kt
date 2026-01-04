@@ -23,26 +23,21 @@ class NotificationReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra("title") ?: "Appointment Reminder"
         val message = intent.getStringExtra("message") ?: "You have an upcoming appointment!"
 
-        // 1. Tampilkan Notifikasi
         showNotification(context, title, message)
 
-        // 2. Update Gamifikasi: On Time Hero
-        // Poin bertambah saat notifikasi muncul (sesuai request)
         updateOnTimeQuest()
     }
 
     private fun updateOnTimeQuest() {
-        // Ambil User yang sedang login di HP ini
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
             val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
             val questRef = database.getReference("users").child(user.uid).child("quests").child("on_time")
 
-            // Pakai Transaction biar aman (tidak balapan data)
             questRef.runTransaction(object : Transaction.Handler {
                 override fun doTransaction(currentData: MutableData): Transaction.Result {
                     var currentVal = currentData.getValue(Int::class.java) ?: 0
-                    if (currentVal < 5) { // Maksimal 5
+                    if (currentVal < 5) {
                         currentVal++
                     }
                     currentData.value = currentVal
@@ -73,7 +68,6 @@ class NotificationReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Saat diklik, arahkan ke NotificationActivity agar user bisa "Mark as Done"
         val openAppIntent = Intent(context, NotificationActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -82,7 +76,7 @@ class NotificationReceiver : BroadcastReceiver() {
         )
 
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_notifications) // Pastikan icon ini ada
+            .setSmallIcon(R.drawable.ic_notifications)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

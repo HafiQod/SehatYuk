@@ -23,8 +23,6 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var btnBack: ImageView
     private lateinit var btnUpdate: MaterialButton
     private lateinit var loadingDialog: ProgressDialog
-
-    // PENTING: Gunakan URL Database kamu yang benar (sesuai history chat sebelumnya)
     private val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
     private val auth = FirebaseAuth.getInstance()
 
@@ -54,23 +52,18 @@ class ProfileActivity : AppCompatActivity() {
         loadingDialog.setCancelable(false)
     }
 
-    // --- 1. AMBIL DATA USER SAAT INI ---
     private fun loadUserData() {
         val user = auth.currentUser
         if (user != null) {
-            // Set Email langsung dari Auth
             edtEmail.setText(user.email)
 
-            // Ambil Nama dari Realtime Database (node: users -> uid -> fullName)
             val userRef = database.getReference("users").child(user.uid)
             userRef.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
-                        // Kalau ada field 'fullName' di database
                         val name = snapshot.child("fullName").getValue(String::class.java)
                         edtName.setText(name)
                     } else {
-                        // Jika kosong, biarkan user yang mengisi
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {
@@ -80,7 +73,6 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    // --- 2. UPDATE PROFIL ---
     private fun updateUserProfile() {
         val user = auth.currentUser ?: return
         val newName = edtName.text.toString().trim()
@@ -94,7 +86,6 @@ class ProfileActivity : AppCompatActivity() {
 
         loadingDialog.show()
 
-        // A. Update Nama ke Database
         val userRef = database.getReference("users").child(user.uid)
         val userMap = mapOf(
             "fullName" to newName,
@@ -103,7 +94,6 @@ class ProfileActivity : AppCompatActivity() {
 
         userRef.updateChildren(userMap).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                // Lanjut update Auth (Email & Password)
                 updateAuthData(user, newEmail, newPassword)
             } else {
                 loadingDialog.dismiss()
@@ -113,7 +103,6 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun updateAuthData(user: FirebaseUser, newEmail: String, newPassword: String) {
-        // B. Update Email (Jika berubah)
         if (newEmail != user.email) {
             user.updateEmail(newEmail).addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
@@ -122,7 +111,6 @@ class ProfileActivity : AppCompatActivity() {
             }
         }
 
-        // C. Update Password (HANYA Jika diisi)
         if (newPassword.isNotEmpty()) {
             if (newPassword.length < 6) {
                 loadingDialog.dismiss()

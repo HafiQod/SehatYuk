@@ -49,13 +49,11 @@ fun NotificationScreen(onBackClick: () -> Unit) {
     var appointmentList by remember { mutableStateOf<List<AppointmentModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // State untuk Dialog
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
     var selectedAppointment by remember { mutableStateOf<AppointmentModel?>(null) }
     var feedbackText by remember { mutableStateOf("") }
 
-    // Mengambil data dari Firebase
     LaunchedEffect(Unit) {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
@@ -72,7 +70,6 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                                 tempList.add(appt)
                             }
                         }
-                        // Urutkan dari yang terbaru (reverse)
                         appointmentList = tempList.reversed()
                         isLoading = false
                     }
@@ -85,7 +82,6 @@ fun NotificationScreen(onBackClick: () -> Unit) {
         }
     }
 
-    // --- DIALOG KONFIRMASI ---
     if (showConfirmationDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmationDialog = false },
@@ -111,7 +107,6 @@ fun NotificationScreen(onBackClick: () -> Unit) {
         )
     }
 
-    // --- DIALOG FEEDBACK ---
     if (showFeedbackDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -189,7 +184,6 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
-                    // --- UPCOMING ---
                     item {
                         Text(
                             text = "Upcoming Appointments",
@@ -217,7 +211,6 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                         }
                     }
 
-                    // --- COMPLETED ---
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -358,12 +351,10 @@ fun isAppointmentPassed(dateStr: String, timeStr: String): Boolean {
     }
 }
 
-// === FUNGSI LOGIKA GAMIFIKASI ===
 fun submitFeedbackAndComplete(appt: AppointmentModel, feedback: String, context: Context) {
     val user = FirebaseAuth.getInstance().currentUser ?: return
     val database = FirebaseDatabase.getInstance("https://mediplusapp-e6128-default-rtdb.firebaseio.com")
 
-    // 1. Update Appointment Status
     val apptRef = database.getReference("appointments").child(appt.id)
     val updates = mapOf(
         "status" to "Done",
@@ -374,7 +365,6 @@ fun submitFeedbackAndComplete(appt: AppointmentModel, feedback: String, context:
         .addOnSuccessListener {
             Toast.makeText(context, "Completed! Checking rewards...", Toast.LENGTH_SHORT).show()
 
-            // 2. Jalankan Logika Poin
             checkGamificationPoints(user.uid, appt, database)
         }
         .addOnFailureListener {
@@ -390,15 +380,12 @@ fun checkGamificationPoints(userId: String, appt: AppointmentModel, database: Fi
             val now = System.currentTimeMillis()
             val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
-            // --- 1. LOGIKA ON TIME HERO ---
-            // Syarat: Mark as done < 10 menit setelah jadwal
             try {
                 val apptDate = format.parse("${appt.date} ${appt.time}")
                 if (apptDate != null) {
-                    val diff = now - apptDate.time // Selisih waktu sekarang dan jadwal (ms)
+                    val diff = now - apptDate.time
                     val tenMinutesInMillis = 10 * 60 * 1000
 
-                    // Jika diff positif (sudah lewat) DAN kurang dari 10 menit
                     if (diff in 1..tenMinutesInMillis) {
                         incrementQuestPoint(userRef, "on_time")
                     }
@@ -407,8 +394,6 @@ fun checkGamificationPoints(userId: String, appt: AppointmentModel, database: Fi
                 e.printStackTrace()
             }
 
-            // --- 2. LOGIKA ROUTINE CHECK-UP ---
-            // Syarat: Purpose mengandung "Check-up" DAN Cooldown 1 Minggu
             if (appt.purpose.contains("Check-up", ignoreCase = true) || appt.purpose.contains("Check up", ignoreCase = true)) {
                 val lastRoutine = snapshot.child("last_routine_date").getValue(Long::class.java) ?: 0L
                 if (isOneWeekPassed(lastRoutine, now)) {
@@ -417,8 +402,6 @@ fun checkGamificationPoints(userId: String, appt: AppointmentModel, database: Fi
                 }
             }
 
-            // --- 3. LOGIKA FEEDBACK APPOINTMENT ---
-            // Syarat: Cooldown 1 Minggu (Feedback selalu terisi di fungsi ini)
             val lastFeedback = snapshot.child("last_feedback_date").getValue(Long::class.java) ?: 0L
             if (isOneWeekPassed(lastFeedback, now)) {
                 incrementQuestPoint(userRef, "feedback")
@@ -430,13 +413,11 @@ fun checkGamificationPoints(userId: String, appt: AppointmentModel, database: Fi
     })
 }
 
-// Helper: Cek apakah sudah lewat 1 minggu (7 hari)
 fun isOneWeekPassed(lastDate: Long, currentDate: Long): Boolean {
     val oneWeekInMillis = 7 * 24 * 60 * 60 * 1000L
     return (currentDate - lastDate) >= oneWeekInMillis
 }
 
-// Helper: Tambah Poin (Max 5)
 fun incrementQuestPoint(userQuestRef: DatabaseReference, questType: String) {
     userQuestRef.child(questType).runTransaction(object : Transaction.Handler {
         override fun doTransaction(currentData: MutableData): Transaction.Result {

@@ -64,7 +64,6 @@ class ChatbotActivity : AppCompatActivity() {
         setupRecyclerView()
         setupBottomNav()
 
-        // --- SETUP LISTENER ---
         btnSend.setOnClickListener {
             val message = etMessage.text.toString().trim()
             if (message.isNotEmpty()) {
@@ -74,7 +73,6 @@ class ChatbotActivity : AppCompatActivity() {
             }
         }
 
-        // Klik Profile -> Muncul Menu
         ivProfile.setOnClickListener { view ->
             showProfileMenu(view)
         }
@@ -86,11 +84,15 @@ class ChatbotActivity : AppCompatActivity() {
         btnSend = findViewById(R.id.btnSend)
         layoutWelcome = findViewById(R.id.layoutWelcome)
         progressBar = findViewById(R.id.progressBar)
-        // Inisialisasi ivProfile (sesuai ID di XML baru)
         ivProfile = findViewById(R.id.ivProfile)
+
+        val ivNotification = findViewById<ImageView>(R.id.ivNotification)
+
+        ivNotification.setOnClickListener {
+            startActivity(Intent(this, NotificationActivity::class.java))
+        }
     }
 
-    // --- LOGIKA POPUP MENU ---
     private fun showProfileMenu(view: View) {
         val popup = PopupMenu(this, view)
         popup.menuInflater.inflate(R.menu.menu_profile, popup.menu)

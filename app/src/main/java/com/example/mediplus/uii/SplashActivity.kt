@@ -35,7 +35,6 @@ class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. Aktifkan Edge-to-Edge agar fullscreen sampai belakang status bar & nav bar
         enableEdgeToEdge()
 
         setContent {
@@ -98,7 +97,6 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                // 2. Tambahkan navigationBarsPadding agar teks naik sedikit di atas tombol navigasi
                 .navigationBarsPadding()
                 .padding(bottom = 50.dp)
                 .alpha(alpha.value)

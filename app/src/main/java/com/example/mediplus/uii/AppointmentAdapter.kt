@@ -10,7 +10,7 @@ import com.example.mediplus.uii.database.AppointmentModel
 
 class AppointmentAdapter(
     private val appointmentList: ArrayList<AppointmentModel>,
-    private val isHome: Boolean = false, // Parameter baru: cek apakah ini di Home?
+    private val isHome: Boolean = false,
     private val onItemClick: (AppointmentModel) -> Unit
 ) : RecyclerView.Adapter<AppointmentAdapter.MyViewHolder>() {
 
@@ -26,7 +26,6 @@ class AppointmentAdapter(
         holder.tvPurpose.text = currentItem.purpose
         holder.tvDate.text = currentItem.date
 
-        // LOGIKA BARU: Jika di Home, sembunyikan View Details
         if (isHome) {
             holder.tvViewDetails.visibility = View.GONE
         } else {
@@ -45,7 +44,6 @@ class AppointmentAdapter(
     class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvPurpose: TextView = itemView.findViewById(R.id.tvPurpose)
         val tvDate: TextView = itemView.findViewById(R.id.tvDate)
-        // Tambahkan ID View Details
         val tvViewDetails: TextView = itemView.findViewById(R.id.tvViewDetails)
     }
 }

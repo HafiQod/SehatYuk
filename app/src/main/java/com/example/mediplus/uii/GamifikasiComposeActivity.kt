@@ -31,7 +31,6 @@ import com.example.mediplus.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
-// Warna sesuai tema
 val MediPurplePrimary = Color(0xFF7B61FF)
 val MediTextPrimary = Color(0xFF394263)
 val MediTextSecondary = Color(0xFF7A869A)
@@ -44,8 +43,6 @@ class GamifikasiComposeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. AKTIFKAN EDGE-TO-EDGE (Navigasi Melayang/Transparan)
-        // Kita set status bar & nav bar icon menjadi terang (cocok untuk background ungu gelap)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
@@ -132,7 +129,6 @@ fun GamifikasiScreen(
     val scrollState = rememberScrollState()
     val maxPoints = 20
 
-    // Box Utama (Background Ungu Full Layar)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -141,12 +137,10 @@ fun GamifikasiScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // 2. Padding System Bar (Agar konten tidak ketutup Status Bar & Navigasi)
-                .statusBarsPadding() // Padding atas otomatis (jam/baterai)
-                .navigationBarsPadding() // Padding bawah otomatis (navigasi HP)
+                .statusBarsPadding()
+                .navigationBarsPadding()
                 .verticalScroll(scrollState)
         ) {
-            // Padding tambahan agar logo tidak terlalu mepet atas
             Spacer(modifier = Modifier.height(16.dp))
 
             Image(
@@ -165,7 +159,6 @@ fun GamifikasiScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 1. On Time Hero
                 QuestItem(
                     title = "On Time Hero",
                     current = quests["on_time"] ?: 0,
@@ -174,7 +167,6 @@ fun GamifikasiScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 2. Routine Check-up
                 QuestItem(
                     title = "Routine Check-up",
                     current = quests["routine"] ?: 0,
@@ -183,7 +175,6 @@ fun GamifikasiScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 3. Healthy Reader
                 QuestItem(
                     title = "Healthy Reader",
                     current = quests["reading"] ?: 0,
@@ -193,7 +184,6 @@ fun GamifikasiScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 4. Feedback Appointment
                 QuestItem(
                     title = "Feedback Appointment",
                     current = quests["feedback"] ?: 0,
@@ -212,7 +202,6 @@ fun GamifikasiScreen(
                     Text("Home")
                 }
 
-                // Spacer bawah agar scroll lebih enak
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }

@@ -37,18 +37,13 @@ class AppointmentActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_appointment)
 
-        // 1. Inisialisasi View
         rvAppointments = findViewById(R.id.rvAppointments)
         tvEmpty = findViewById(R.id.tvEmpty)
         val ivProfile = findViewById<ImageView>(R.id.ivProfile)
         val btnGoToNewAppointment = findViewById<Button>(R.id.btnGoToNewAppointment)
 
-        // Asumsi ID ImageView notifikasi kamu adalah ivNotification atau urutan imageview pertama
-        // Sebaiknya beri ID di XML: android:id="@+id/ivNotification"
-        // Kode di bawah mencari ImageView lonceng. Sesuaikan ID jika perlu.
-        val ivNotification = findViewById<ImageView>(R.id.ivNotification) // Pastikan ID ini ada di XML
+        val ivNotification = findViewById<ImageView>(R.id.ivNotification)
 
-        // 2. Setup RecyclerView
         rvAppointments.layoutManager = LinearLayoutManager(this)
         rvAppointments.setHasFixedSize(true)
         appointmentList = arrayListOf()
@@ -65,7 +60,6 @@ class AppointmentActivity : AppCompatActivity() {
             showProfileMenu(view)
         }
 
-        // Navigasi ke Halaman Notifikasi Baru
         ivNotification?.setOnClickListener {
             startActivity(Intent(this, NotificationActivity::class.java))
         }
@@ -117,7 +111,7 @@ class AppointmentActivity : AppCompatActivity() {
         val tvPurpose = dialog.findViewById<TextView>(R.id.tvDetailPurpose)
         val tvPhone = dialog.findViewById<TextView>(R.id.tvDetailPhone)
         val tvAddress = dialog.findViewById<TextView>(R.id.tvDetailAddress)
-        val btnDelete = dialog.findViewById<Button>(R.id.btnDeleteAppointment) // Tombol Hapus Baru
+        val btnDelete = dialog.findViewById<Button>(R.id.btnDeleteAppointment)
         val btnClose = dialog.findViewById<Button>(R.id.btnCloseDialog)
 
         tvName.text = appt.fullName
@@ -126,7 +120,6 @@ class AppointmentActivity : AppCompatActivity() {
         tvPhone.text = appt.phoneNumber
         tvAddress.text = appt.address
 
-        // --- LOGIKA HAPUS APPOINTMENT ---
         btnDelete.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Cancel Appointment")
