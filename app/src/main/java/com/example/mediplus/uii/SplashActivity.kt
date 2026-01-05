@@ -35,6 +35,13 @@ class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // ==========================================
+        // ANGGOTA KELOMPOK:
+        // 1. Nama: Muhammad Hafi Arqodi     | NIM: 23523084
+        // 2. Nama: L.Zhafran Ramadhan       | NIM: 23523075
+        // 3. Nama: Muchammad Naufal Atsaqif | NIM: 23523100
+        // ==========================================
+
         enableEdgeToEdge()
 
         setContent {
