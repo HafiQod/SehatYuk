@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 data class ChatMessage(val message: String, val isUser: Boolean)
 
 class ChatbotActivity : AppCompatActivity() {
-    private val apiKey = "AIzaSyC_OXkg5qHwUqx0ZOhBOqih0_lE8hx_qfk"
+    private val apiKey = "AIzaSyC_OXkg5qHwUqx0ZOhBOqih0_k"
     private lateinit var rvChatHistory: RecyclerView
     private lateinit var etMessage: EditText
     private lateinit var btnSend: ImageView
